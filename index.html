@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+    <title>Кино</title>
+
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #101010;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 24px;
+        }
+
+        .info {
+            color: #aaaaaa;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .player {
+            width: 100%;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+            background: #000;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            background: #1d1d1d;
+            color: #cccccc;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🎬 Кино</h1>
+
+    <div class="info" id="info">
+        Загрузка...
+    </div>
+
+    <div class="player">
+        <video
+            id="video"
+            controls
+            playsinline
+            preload="metadata"
+        ></video>
+    </div>
+
+    <div class="status" id="status">
+        Подготавливаем видео...
+    </div>
+
+</div>
+
+<script>
+    const video = document.getElementById("video");
+    const info = document.getElementById("info");
+    const status = document.getElementById("status");
+
+    /*
+     * Пока используем официальный тестовый MP4.
+     * Это НЕ фильм.
+     * Наша задача сейчас — проверить саму цепочку:
+     *
+     * MAX → Mini App → внешний видеопоток.
+     */
+    const TEST_VIDEO_URL =
+        "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+
+    function getPayload() {
+        try {
+            if (
+                window.WebApp &&
+                window.WebApp.initDataUnsafe &&
+                window.WebApp.initDataUnsafe.start_param
+            ) {
+                return window.WebApp.initDataUnsafe.start_param;
+            }
+        } catch (e) {
+            console.log(e);
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        return params.get("startapp") || "";
+    }
+
+    function start() {
+        const payload = getPayload();
+
+        if (payload) {
+            info.textContent = "Получены данные серии: " + payload;
+        } else {
+            info.textContent = "Тестовый режим Mini App";
+        }
+
+        video.src = TEST_VIDEO_URL;
+
+        video.addEventListener("loadedmetadata", function () {
+            status.textContent = "✅ Видео готово к просмотру";
+        });
+
+        video.addEventListener("error", function () {
+            status.textContent =
+                "❌ Не удалось загрузить внешний видеопоток";
+        });
+    }
+
+    start();
+</script>
+
+</body>
+</html>
