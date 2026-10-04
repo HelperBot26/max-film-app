@@ -2,10 +2,12 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
     >
+
     <title>Кино</title>
 
     <script src="https://st.max.ru/js/max-web-app.js"></script>
@@ -15,52 +17,116 @@
             box-sizing: border-box;
         }
 
+        html,
         body {
             margin: 0;
             padding: 0;
-            background: #101010;
+            min-height: 100%;
+            background: #101114;
             color: #ffffff;
-            font-family: Arial, sans-serif;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        body {
+            padding: 16px;
         }
 
         .container {
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
         h1 {
-            margin: 0 0 10px;
+            margin: 0 0 8px;
             font-size: 24px;
         }
 
-        .info {
-            color: #aaaaaa;
+        .subtitle {
+            color: #aeb2ba;
             font-size: 14px;
             margin-bottom: 20px;
         }
 
-        .player {
-            width: 100%;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
+        .players {
+            display: grid;
+            gap: 12px;
         }
 
-        video {
+        .player-button {
             width: 100%;
+            border: 0;
+            border-radius: 14px;
+            padding: 16px;
+            background: #202329;
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .player-button:active {
+            transform: scale(0.99);
+        }
+
+        .player-button small {
             display: block;
-            background: #000;
+            margin-top: 4px;
+            color: #9ca1aa;
+            font-size: 12px;
+            font-weight: 400;
         }
 
-        .status {
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 10px;
-            background: #1d1d1d;
-            color: #cccccc;
-            font-size: 14px;
+        .player {
+            display: none;
+            margin-top: 18px;
+        }
+
+        .player.active {
+            display: block;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            border-radius: 14px;
+            background: #000000;
+        }
+
+        .video-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .back-button {
+            margin-top: 14px;
+            width: 100%;
+            padding: 13px;
+            border: 0;
+            border-radius: 12px;
+            background: #2a2e35;
+            color: #ffffff;
+            font-size: 15px;
+        }
+
+        .message {
+            padding: 18px;
+            border-radius: 14px;
+            background: #1b1e23;
+            color: #c5c9d0;
+            line-height: 1.45;
+        }
+
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
@@ -71,79 +137,472 @@
 
     <h1>🎬 Кино</h1>
 
-    <div class="info" id="info">
-        Загрузка...
+    <div class="subtitle" id="episodeInfo">
+        Загрузка серии...
     </div>
 
-    <div class="player">
-        <video
-            id="video"
-            controls
-            playsinline
-            preload="metadata"
-        ></video>
+    <div id="message" class="message hidden"></div>
+
+    <!-- ======================================================
+         СПИСОК ПЛЕЕРОВ
+         ====================================================== -->
+
+    <div id="players" class="players">
+
+        <button
+            id="player1Button"
+            class="player-button"
+            onclick="openPlayer1()"
+        >
+            ▶ Плеер 1
+            <small>RUTUBE</small>
+        </button>
+
+        <button
+            id="player2Button"
+            class="player-button"
+            onclick="openPlayer2()"
+        >
+            ▶ Плеер 2
+            <small>VK Видео</small>
+        </button>
+
     </div>
 
-    <div class="status" id="status">
-        Подготавливаем видео...
+
+    <!-- ======================================================
+         ПЛЕЕР 1 — RUTUBE
+         ====================================================== -->
+
+    <div id="player1" class="player">
+
+        <div class="video-wrapper">
+
+            <iframe
+                id="rutubeFrame"
+                allow="clipboard-write; autoplay; fullscreen"
+                allowfullscreen
+                webkitallowfullscreen
+                mozallowfullscreen
+            ></iframe>
+
+        </div>
+
+        <button
+            class="back-button"
+            onclick="showPlayerButtons()"
+        >
+            ← Назад к плеерам
+        </button>
+
+    </div>
+
+
+    <!-- ======================================================
+         ПЛЕЕР 2 — VK
+         ====================================================== -->
+
+    <div id="player2" class="player">
+
+        <div class="video-wrapper">
+
+            <iframe
+                id="vkFrame"
+                allow="autoplay; fullscreen"
+                allowfullscreen
+            ></iframe>
+
+        </div>
+
+        <button
+            class="back-button"
+            onclick="openPlayer2External()"
+        >
+            Открыть Плеер 2
+        </button>
+
+        <button
+            class="back-button"
+            onclick="showPlayerButtons()"
+        >
+            ← Назад к плеерам
+        </button>
+
     </div>
 
 </div>
 
+
 <script>
-    const video = document.getElementById("video");
-    const info = document.getElementById("info");
-    const status = document.getElementById("status");
 
-    /*
-     * Пока используем официальный тестовый MP4.
-     * Это НЕ фильм.
-     * Наша задача сейчас — проверить саму цепочку:
-     *
-     * MAX → Mini App → внешний видеопоток.
-     */
-    const TEST_VIDEO_URL =
-        "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+    // ========================================================
+    // MAX
+    // ========================================================
 
-    function getPayload() {
+    try {
+
+        if (window.WebApp) {
+            window.WebApp.ready();
+            window.WebApp.expand();
+        }
+
+    } catch (error) {
+
+        console.log("MAX error:", error);
+
+    }
+
+
+    // ========================================================
+    // DOM
+    // ========================================================
+
+    const playersElement =
+        document.getElementById("players");
+
+    const messageElement =
+        document.getElementById("message");
+
+    const episodeInfoElement =
+        document.getElementById("episodeInfo");
+
+    const player1Element =
+        document.getElementById("player1");
+
+    const player2Element =
+        document.getElementById("player2");
+
+    const rutubeFrame =
+        document.getElementById("rutubeFrame");
+
+    const vkFrame =
+        document.getElementById("vkFrame");
+
+    const player2Button =
+        document.getElementById("player2Button");
+
+
+    // ========================================================
+    // MAX START PARAM
+    // ========================================================
+
+    function getStartParam() {
+
         try {
+
             if (
                 window.WebApp &&
-                window.WebApp.initDataUnsafe &&
-                window.WebApp.initDataUnsafe.start_param
+                window.WebApp.initDataUnsafe
             ) {
-                return window.WebApp.initDataUnsafe.start_param;
+
+                return (
+                    window.WebApp.initDataUnsafe.start_param ||
+                    ""
+                );
+
             }
-        } catch (e) {
-            console.log(e);
+
+        } catch (error) {
+
+            console.log(
+                "Ошибка получения start_param:",
+                error
+            );
+
         }
 
-        const params = new URLSearchParams(window.location.search);
-        return params.get("startapp") || "";
+        return "";
     }
 
-    function start() {
-        const payload = getPayload();
 
-        if (payload) {
-            info.textContent = "Получены данные серии: " + payload;
-        } else {
-            info.textContent = "Тестовый режим Mini App";
+    // ========================================================
+    // PAYLOAD
+    //
+    // Бот передаёт:
+    //
+    // watch-d75b6afe030822f3f4b5f82d40a9bfb2
+    //
+    // Поэтому разбираем через "-"
+    // ========================================================
+
+    function parsePayload(payload) {
+
+        console.log(
+            "MAX start_param:",
+            payload
+        );
+
+        if (!payload) {
+            return null;
         }
 
-        video.src = TEST_VIDEO_URL;
 
-        video.addEventListener("loadedmetadata", function () {
-            status.textContent = "✅ Видео готово к просмотру";
-        });
+        // Новый формат:
+        //
+        // watch-RUTUBE_ID
+        //
 
-        video.addEventListener("error", function () {
-            status.textContent =
-                "❌ Не удалось загрузить внешний видеопоток";
-        });
+        if (payload.startsWith("watch-")) {
+
+            const videoId =
+                payload.substring(6);
+
+            if (!videoId) {
+                return null;
+            }
+
+            return {
+                type: "rutube",
+                movieId: videoId,
+                season: null,
+                episode: null
+            };
+        }
+
+
+        // Старый формат:
+        //
+        // watch:RUTUBE_ID
+        //
+
+        if (payload.startsWith("watch:")) {
+
+            const videoId =
+                payload.substring(6);
+
+            if (!videoId) {
+                return null;
+            }
+
+            return {
+                type: "rutube",
+                movieId: videoId,
+                season: null,
+                episode: null
+            };
+        }
+
+
+        return null;
     }
 
-    start();
+
+    // ========================================================
+    // ИНФОРМАЦИЯ
+    // ========================================================
+
+    function updateEpisodeInfo(data) {
+
+        if (!data) {
+
+            episodeInfoElement.textContent =
+                "Серия не определена";
+
+            return;
+        }
+
+        episodeInfoElement.textContent =
+            "RUTUBE • готово к просмотру";
+    }
+
+
+    // ========================================================
+    // СООБЩЕНИЯ
+    // ========================================================
+
+    function showMessage(text) {
+
+        messageElement.textContent = text;
+
+        messageElement.classList.remove(
+            "hidden"
+        );
+    }
+
+
+    function hideMessage() {
+
+        messageElement.classList.add(
+            "hidden"
+        );
+
+        messageElement.textContent = "";
+    }
+
+
+    // ========================================================
+    // СКРЫТИЕ / ПОКАЗ
+    // ========================================================
+
+    function hideAllPlayers() {
+
+        player1Element.classList.remove(
+            "active"
+        );
+
+        player2Element.classList.remove(
+            "active"
+        );
+
+        rutubeFrame.src = "";
+
+        vkFrame.src = "";
+    }
+
+
+    function showPlayerButtons() {
+
+        hideAllPlayers();
+
+        playersElement.classList.remove(
+            "hidden"
+        );
+
+        hideMessage();
+    }
+
+
+    // ========================================================
+    // ПЛЕЕР 1 — RUTUBE
+    // ========================================================
+
+    function openPlayer1() {
+
+        if (!window.currentRutubeId) {
+
+            showMessage(
+                "RUTUBE-видео не найдено."
+            );
+
+            return;
+        }
+
+
+        const videoId =
+            window.currentRutubeId;
+
+
+        console.log(
+            "Открываем RUTUBE:",
+            videoId
+        );
+
+
+        // Официальный RUTUBE embed
+
+        const embedUrl =
+            `https://rutube.ru/play/embed/${videoId}`;
+
+
+        rutubeFrame.src = embedUrl;
+
+
+        playersElement.classList.add(
+            "hidden"
+        );
+
+        player2Element.classList.remove(
+            "active"
+        );
+
+        player1Element.classList.add(
+            "active"
+        );
+
+        hideMessage();
+    }
+
+
+    // ========================================================
+    // ПЛЕЕР 2 — ПОКА ЗАГОТОВКА
+    // ========================================================
+
+    function openPlayer2() {
+
+        showMessage(
+            "Плеер 2 пока не подключён. Следующим этапом добавим VK Видео."
+        );
+    }
+
+
+    function openPlayer2External() {
+
+        showMessage(
+            "Плеер 2 пока не подключён."
+        );
+    }
+
+
+    // ========================================================
+    // ЗАГРУЗКА
+    // ========================================================
+
+    function loadApp() {
+
+        const payload =
+            getStartParam();
+
+
+        console.log(
+            "Получен payload:",
+            payload
+        );
+
+
+        const data =
+            parsePayload(payload);
+
+
+        if (!data) {
+
+            showMessage(
+                "Не удалось определить видео."
+            );
+
+            return;
+        }
+
+
+        updateEpisodeInfo(data);
+
+
+        // Сохраняем RUTUBE ID
+
+        window.currentRutubeId =
+            data.movieId;
+
+
+        console.log(
+            "RUTUBE ID:",
+            window.currentRutubeId
+        );
+
+
+        // Плеер 1 доступен
+
+        document
+            .getElementById("player1Button")
+            .classList.remove("hidden");
+
+
+        // Плеер 2 пока отключаем визуально,
+        // чтобы не вводить в заблуждение
+
+        player2Button.classList.add(
+            "hidden"
+        );
+
+
+        showPlayerButtons();
+    }
+
+
+    // ========================================================
+    // START
+    // ========================================================
+
+    loadApp();
+
 </script>
 
 </body>
